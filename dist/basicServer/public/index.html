@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duval Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .result-box {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .result-box h3 {
+            margin-top: 0;
+        }
+        .result-box p {
+            margin: 5px 0;
+        }
+        .section {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>DUVAL COUNTY DATA CENTER!</h1>
+    <input type="text" class="search" placeholder="JOHN A., REV. KENNEDY">
+    <button class="btn" style="display: block;">SEARCH</button>
+    <div id="results"></div>
+    <script>
+        const btnClass = ".btn";
+        const textBoxClass = ".search";
+
+        const resultsDiv = document.getElementById("results");
+
+        document.querySelector(btnClass).addEventListener("click", async (e) => {
+            const value = document.querySelector(textBoxClass).value;
+            if (value.trim() === "") {
+                resultsDiv.innerHTML = ""; // Clear results if input is empty
+                return;
+            }
+
+            try {
+                resultsDiv.innerHTML = '<p class="loading">Fetching data, please wait...</p>';
+                
+                const response = await fetch(`/api/user?name=${encodeURIComponent(value)}`);
+                if (!response.ok) {
+                    throw new Error("Failed to fetch user data");
+                }
+
+                const data = await response.json();
+                displayResults(data);
+            } catch (error) {
+                console.error("Error fetching user data:", error);
+                resultsDiv.innerHTML = "Error fetching user data.";
+            }
+        });
+
+        function displayResults(data) {
+            resultsDiv.innerHTML = ""; // Clear previous results
+            data.forEach(item => {
+                const resultBox = document.createElement("div");
+                resultBox.classList.add("result-box");
+
+                const partiesHtml = item.parties.map(party => `
+                    <div class="section">
+                        <h3>Party</h3>
+                        <p><strong>Name:</strong> ${party.name}</p>
+                        <p><strong>Type:</strong> ${party.partyType}</p>
+                        <p><strong>Address:</strong> ${party.address || 'N/A'}</p>
+                    </div>
+                `).join('');
+
+                const chargesHtml = item.charges.map(charge => `
+                    <div class="section">
+                        <h3>Charge</h3>
+                        <p><strong>Statute:</strong> ${charge.statute || 'N/A'}</p>
+                        <p><strong>Description:</strong> ${charge.description || 'N/A'}</p>
+                    </div>
+                `).join('');
+
+                const docketsHtml = item.dockets.map(docket => `
+                    <div class="section">
+                        <h3>Docket</h3>
+                        <p><strong>Effective Date:</strong> ${docket.effectiveDate}</p>
+                        <p><strong>Description:</strong> ${docket.description}</p>
+                    </div>
+                `).join('');
+
+                resultBox.innerHTML = `
+                    <h3>Case Number: ${item.caseNumber}</h3>
+                    <p><strong>Status:</strong> ${item.caseStatus}</p>
+                    ${partiesHtml}
+                    ${chargesHtml}
+                    ${docketsHtml}
+                `;
+                resultsDiv.appendChild(resultBox);
+            });
+        }
+    </script>
+</body>
+</html>
